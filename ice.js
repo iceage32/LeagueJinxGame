@@ -40,6 +40,9 @@ var Ice = {
         if(Ice.KEYHELD.down) {
             Ice.animation.y += 5;
         }
+        if(Ice.KEYHELD.ctrl) {
+            Ice.shot();
+        }
 
         //fire bullets
         for(var i=0; i<Ice.bullets.children.length; i++) {
@@ -75,7 +78,6 @@ var Ice = {
         }
         if(keyCode == Ice.KEYS.CTRL) {
             Ice.KEYHELD.ctrl = true;
-            Ice.shot();
             Ice.animation.gotoAndPlay('hit')
             setTimeout(function() {Ice.animation.gotoAndStop((Ice.moving ? 'run':'stand'));}, 500);
         }
