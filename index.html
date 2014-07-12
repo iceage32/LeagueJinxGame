@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <script src="createjs.js"></script>
+    <script src="ice.js"></script>
+</head>
+<body onload="Ice.init('game')">
+    <canvas id="game" width="1000" height="600"></canvas>
+    <div id="fps"></div>
+    <style>
+        body,html {
+            width: 100%;
+            height: 100%;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: rgb(23, 37, 41);
+            text-align: center;
+        }
+        #game {
+            border: 2px dashed #000;
+            margin-top: 10%;
+            background-color: #FFF;
+        }
+        #fps {
+            position: absolute;
+            top: 0;
+            left: 0;
+            color: #fff;
+        }
+    </style>
+</body>
+</html>
