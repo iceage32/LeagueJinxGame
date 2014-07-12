@@ -16,6 +16,8 @@ var Ice = {
         ctrl: false
     },
     bullets: new createjs.Container(),
+    bulletTime: 250,
+    lastBulletTime: null,
 
     init: function(canvas) {
         Ice.stage = new createjs.Stage(canvas);
@@ -41,7 +43,17 @@ var Ice = {
             Ice.animation.y += 5;
         }
         if(Ice.KEYHELD.ctrl) {
-            Ice.shot();
+            if(Ice.lastBulletTime + Ice.bulletTime <= createjs.Ticker.getTime()) {
+                Ice.shot();
+            }
+        }
+
+        var playerBounds = Ice.animation.getBounds();
+        if(Ice.animation.y <= 0) {
+            Ice.animation.y = 0;
+        }
+        if(Ice.animation.y >= Ice.stage.canvas.height - playerBounds.height) {
+            Ice.animation.y = Ice.stage.canvas.height - playerBounds.height;
         }
 
         //fire bullets
@@ -62,6 +74,7 @@ var Ice = {
         s.x = Ice.animation.x + 50;
         Ice.bullets.addChild(s);
         Ice.stage.update();
+        Ice.lastBulletTime = createjs.Ticker.getTime();
     },
     handleKeyDown: function(e) {
         var keyCode = e.which ? e.which: e.keyCode;
