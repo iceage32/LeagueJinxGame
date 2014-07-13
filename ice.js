@@ -149,7 +149,7 @@ var Ice = {
 
 
         document.getElementById('fps').innerHTML = Math.round(createjs.Ticker.getMeasuredFPS());
-        Ice.stage.update();
+        Ice.stage.update(e);
     },
     handleMouseMove: function(event) {
         Ice.player.y = event.stageY -32;
