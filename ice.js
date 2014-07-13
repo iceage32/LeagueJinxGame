@@ -11,18 +11,24 @@ var Ice = {
         DOWN: 40,
         CTRL: 17
     },
-    KEYHELD: {
-        up: false,
+    speed: {
+        player: 0.6,
+        bullet: 1,
+        monster: 0.05,
+        monsterX: 0.03
+    },
+    playerInteraction: {
         down: false,
-        ctrl: false
+        up: false,
+        shot: false
     },
     bullets: new createjs.Container(),
-    bulletTime: 250,
+    bulletTime: 200,
     lastBulletTime: null,
     monsters: new createjs.Container(),
-    monsterSpawnTime: 6000,
+    monsterSpawnTime: 2000,
     monsterLastSpawn: null,
-    monsterSpeed: 0.5,
+    score: 0,
 
     init: function(canvas) {
         Ice.stage = new createjs.Stage(canvas);
@@ -40,17 +46,30 @@ var Ice = {
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", Ice.handleTick);
 
+        Ice.GUI.init();
         window.addEventListener('keydown', Ice.handleKeyDown);
         window.addEventListener('keyup', Ice.handleKeyUp);
+
+        Ice.stage.enableMouseOver();
+        Ice.stage.on("mouseover", function() {
+            Ice.stage.addEventListener("stagemousemove", Ice.handleMouseMove);
+            Ice.stage.addEventListener("stagemousedown", Ice.handleMouseClick);
+            Ice.stage.addEventListener('stagemouseup', Ice.handleMouseClickRelease);
+        });
+        Ice.stage.on("mouseout", function() {
+            Ice.stage.removeEventListener("stagemousemove", Ice.handleMouseMove);
+            Ice.stage.removeEventListener("stagemousedown", Ice.handleMouseClick);
+            Ice.stage.removeEventListener('statemouseup', Ice.handleMouseClickRelease);
+        });
     },
     handleTick: function(e) {
-        if(Ice.KEYHELD.up) {
-            Ice.player.y -= 5;
+        if(Ice.playerInteraction.up) {
+            Ice.player.y -= Ice.speed.player * e.delta;
         }
-        if(Ice.KEYHELD.down) {
-            Ice.player.y += 5;
+        if(Ice.playerInteraction.down) {
+            Ice.player.y += Ice.speed.player * e.delta;
         }
-        if(Ice.KEYHELD.ctrl) {
+        if(Ice.playerInteraction.ctrl) {
             if(Ice.lastBulletTime + Ice.bulletTime <= createjs.Ticker.getTime()) {
                 Ice.shot();
             }
@@ -72,8 +91,30 @@ var Ice = {
 
         for(var i = 0; i< Ice.monsters.children.length; i++) {
             var m = Ice.monsters.children[i];
-            m.x -= Ice.monsterSpeed;
-            if(m.x <= playerBounds.x) {
+            m.x -= Ice.speed.monster * e.delta;
+            if(m.nextMove <= createjs.Ticker.getTime()) {
+                m.direction = Ice.randomRange(-1, 1);
+                m.nextMove = Ice.randomRange(100, 2000) + createjs.Ticker.getTime();
+            }
+            switch(m.direction) {
+                case 1:
+                    m.y -= Ice.speed.monsterX * e.delta;
+                    break;
+                case -1:
+                    m.y += Ice.speed.monsterX * e.delta;
+                    break;
+            }
+
+            if(m.y >= 500-64) {
+                m.direction = 1;
+                m.nextMove = Ice.randomRange(100, 2000) + createjs.Ticker.getTime();
+            }
+            if(m.y <= 0) {
+                m.direction = -1;
+                m.nextMove = Ice.randomRange(100, 2000) + createjs.Ticker.getTime();
+            }
+
+            if(m.x <= playerBounds.width) {
                 Ice.monsters.removeChild(m);
             }
 
@@ -83,7 +124,12 @@ var Ice = {
                 var pt = b.localToLocal(0, 0, m);
                 if(m.hitTest(pt.x, pt.y)) {
                     Ice.bullets.removeChild(b);
-                    Ice.monsters.removeChild(m);
+                    m.hp--;
+                    if(m.hp == 0) {
+                        Ice.monsters.removeChild(m);
+                        Ice.score++;
+                        Ice.GUI.updateScore();
+                    }
                 }
             }
         }
@@ -91,7 +137,7 @@ var Ice = {
         //fire bullets
         for(var i=0; i<Ice.bullets.children.length; i++) {
             var o = Ice.bullets.children[i];
-            o.x += 10;
+            o.x += Ice.speed.bullet * e.delta;
             if(o.x >= Ice.stage.canvas.width) {
                 Ice.bullets.removeChild(o);
             }
@@ -99,13 +145,28 @@ var Ice = {
 
 
         document.getElementById('fps').innerHTML = Math.round(createjs.Ticker.getMeasuredFPS());
-        Ice.stage.update();
+        Ice.stage.update(event);
+    },
+    handleMouseMove: function(event) {
+        Ice.player.y = event.stageY -32;
+        if(!Ice.runningAnimation) {Ice.player.gotoAndPlay('run'); }
+        Ice.runningAnimation = true;
+    },
+    handleMouseClick: function(event) {
+        Ice.playerInteraction.ctrl = true;
+        Ice.player.gotoAndPlay('hit')
+        setTimeout(function() {Ice.player.gotoAndPlay('stand');}, 500);
+    },
+    handleMouseClickRelease: function(event) {
+        Ice.playerInteraction.ctrl = false;
     },
     spawnMonsters: function() {
-        var m = new createjs.Shape();
-        m.graphics.beginFill('blue').drawRect(0,0, 50, 50);
-        m.x = Ice.stage.canvas.width-50;
-        m.y = Ice.randomRange(0, 500-50);
+        var m = new createjs.Bitmap('assets/teemo.png');
+        m.x = Ice.stage.canvas.width-64;
+        m.y = Ice.randomRange(0, 500-64);
+        m.direction = 0;
+        m.nextMove = 0;
+        m.hp = 3;
         Ice.monsters.addChild(m);
         Ice.stage.update();
     },
@@ -121,20 +182,20 @@ var Ice = {
     handleKeyDown: function(e) {
         var keyCode = e.which ? e.which: e.keyCode;
         if(keyCode == Ice.KEYS.DOWN) {
-            Ice.KEYHELD.down = true;
+            Ice.playerInteraction.down = true;
             if(!Ice.runningAnimation) {Ice.player.gotoAndPlay('run');}
             Ice.runningAnimation = true;
 
         }
         if(keyCode == Ice.KEYS.UP) {
-            Ice.KEYHELD.up = true;
+            Ice.playerInteraction.up = true;
             if(!Ice.runningAnimation) {Ice.player.gotoAndPlay('run'); }
             Ice.runningAnimation = true;
         }
         if(keyCode == Ice.KEYS.CTRL) {
-            Ice.KEYHELD.ctrl = true;
+            Ice.playerInteraction.ctrl = true;
             Ice.player.gotoAndPlay('hit')
-            setTimeout(function() {Ice.player.gotoAndPlay(((Ice.KEYHELD.up || Ice.KEYHELD.down) ? 'run':'stand'));}, 500);
+            setTimeout(function() {Ice.player.gotoAndPlay(((Ice.playerInteraction.up || Ice.playerInteraction.down) ? 'run':'stand'));}, 500);
         }
     },
     handleKeyUp: function(e) {
@@ -143,13 +204,36 @@ var Ice = {
             if(Ice.runningAnimation) {Ice.runningAnimation = false; Ice.player.gotoAndPlay('stand');}
         }
         if(keyCode == Ice.KEYS.UP) {
-            Ice.KEYHELD.up = false;
+            Ice.playerInteraction.up = false;
         }
         if(keyCode == Ice.KEYS.DOWN) {
-            Ice.KEYHELD.down = false;
+            Ice.playerInteraction.down = false;
         }
         if(keyCode == Ice.KEYS.CTRL) {
-            Ice.KEYHELD.ctrl = false;
+            Ice.playerInteraction.ctrl = false;
+        }
+    },
+    GUI: {
+        container: null,
+        background: null,
+        score: null,
+        init: function() {
+            this.container = new createjs.Container();
+            this.container.x = 0;
+            this.container.y = 500;
+            this.background = new createjs.Shape();
+            this.background.graphics.beginFill('rgb(44,44,44)').drawRect(0, 0, Ice.stage.canvas.width, 100);
+
+            this.score = new createjs.Text("Score: " + Ice.score, "18px Arial", "#FFFFFF");
+            this.score.x = 10;
+            this.score.y = 10;
+
+            this.container.addChild(this.background, this.score);
+            Ice.stage.addChild(this.container);
+            Ice.stage.update();
+        },
+        updateScore: function() {
+            this.score.text = 'Score: ' + Ice.score;
         }
     },
     characters: {
@@ -186,5 +270,8 @@ var Ice = {
     },
     randomRange: function(min, max) {
         return Math.floor(Math.random() * (max-min+1)) +min;
+    },
+    randomRangeNoFloor: function(min, max) {
+        return Math.random() * (max - min) + min;
     }
 }
