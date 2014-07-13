@@ -32,15 +32,19 @@ var Ice = {
 
     init: function(canvas) {
         Ice.stage = new createjs.Stage(canvas);
+        Ice.stage.snapToPixel = true;
+        Ice.stage.snapToPixelEnabled = true;
         Ice.spritesheet = new createjs.SpriteSheet(Ice.characters);
         Ice.player = new createjs.Sprite(Ice.spritesheet, 'stand');
 
         //init and position background
         Ice.bg = new createjs.Bitmap('assets/bg.png');
         Ice.bg.x = Ice.stage.canvas.width - Ice.bg
+        //Ice.bg.cache(0,0,Ice.stage.canvas.width, 500);
 
         Ice.player.x = 0;
         Ice.player.y= 0;
+        //Ice.player.cache(0,0,64,64);
 
         Ice.stage.addChild(Ice.bg, Ice.player, Ice.bullets, Ice.monsters);
         createjs.Ticker.setFPS(60);
@@ -145,7 +149,7 @@ var Ice = {
 
 
         document.getElementById('fps').innerHTML = Math.round(createjs.Ticker.getMeasuredFPS());
-        Ice.stage.update(event);
+        Ice.stage.update();
     },
     handleMouseMove: function(event) {
         Ice.player.y = event.stageY -32;
@@ -164,6 +168,7 @@ var Ice = {
         var m = new createjs.Bitmap('assets/teemo.png');
         m.x = Ice.stage.canvas.width-64;
         m.y = Ice.randomRange(0, 500-64);
+        //m.cache(-64, -64, 64, 64);
         m.direction = 0;
         m.nextMove = 0;
         m.hp = 3;
@@ -173,6 +178,7 @@ var Ice = {
     shot: function() {
         var s = new createjs.Shape();
         s.graphics.beginFill('red').drawCircle(0, 0, 5);
+        s.cache(-5,-5,10,10);
         s.y = Ice.player.y + 25;
         s.x = Ice.player.x + 50;
         Ice.bullets.addChild(s);
