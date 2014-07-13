@@ -54,6 +54,14 @@ var Ice = {
         window.addEventListener('keydown', Ice.handleKeyDown);
         window.addEventListener('keyup', Ice.handleKeyUp);
 
+        //sound
+        createjs.Sound.registerPlugins([createjs.WebAudioPlugin]);
+        createjs.Sound.registerSound('assets/sound/attack1.wav', 'attack1');
+        createjs.Sound.registerSound('assets/sound/attack2.wav', 'attack2');
+        createjs.Sound.registerSound('assets/sound/attack3.wav', 'attack3');
+        createjs.Sound.registerSound('assets/sound/attack4.wav', 'attack4');
+        createjs.Sound.registerSound('assets/sound/teemodie.wav', 'teemodie');
+
         Ice.stage.enableMouseOver();
         Ice.stage.on("mouseover", function() {
             Ice.stage.addEventListener("stagemousemove", Ice.handleMouseMove);
@@ -109,7 +117,8 @@ var Ice = {
                     break;
             }
 
-            if(m.y >= 500-64) {
+            var mb = m.getBounds();
+            if(m.y >= 500-mb.height) {
                 m.direction = 1;
                 m.nextMove = Ice.randomRange(100, 2000) + createjs.Ticker.getTime();
             }
@@ -125,14 +134,16 @@ var Ice = {
             //check if hit monster
             for(var k=0; k<Ice.bullets.children.length; k++) {
                 var b =  Ice.bullets.children[k];
-                var pt = b.localToLocal(0, 0, m);
-                if(m.hitTest(pt.x, pt.y)) {
+                var pt = b.localToLocal(0, 0, m.getChildByName('image'));
+                if(m.getChildByName('image').hitTest(pt.x, pt.y)) {
                     Ice.bullets.removeChild(b);
                     m.hp--;
+                    m.getChildByName('hp').text = m.hp + '/3';
                     if(m.hp == 0) {
                         Ice.monsters.removeChild(m);
                         Ice.score++;
                         Ice.GUI.updateScore();
+                        createjs.Sound.play('teemodie');
                     }
                 }
             }
@@ -165,25 +176,34 @@ var Ice = {
         Ice.playerInteraction.ctrl = false;
     },
     spawnMonsters: function() {
-        var m = new createjs.Bitmap('assets/teemo.png');
-        m.x = Ice.stage.canvas.width-64;
-        m.y = Ice.randomRange(0, 500-64);
-        //m.cache(-64, -64, 64, 64);
-        m.direction = 0;
-        m.nextMove = 0;
-        m.hp = 3;
-        Ice.monsters.addChild(m);
+        var c = new createjs.Container();
+        var b = new createjs.Bitmap('assets/teemo.png');
+        var hp = new createjs.Text('3/3', 'bold 14px Arial', '#FFFFFF');
+        c.x = Ice.stage.canvas.width-64;
+        c.y = Ice.randomRange(0, 500-64);
+        c.direction = 0;
+        c.nextMove = 0;
+        c.hp = 3;
+
+        b.name = "image";
+        hp.name = "hp";
+        b.y = 20;
+        hp.y = 0;
+        hp.x = (64-hp.getMeasuredWidth())/2;
+
+        c.addChild(b, hp);
+        Ice.monsters.addChild(c);
         Ice.stage.update();
     },
     shot: function() {
         var s = new createjs.Shape();
-        s.graphics.beginFill('red').drawCircle(0, 0, 5);
-        s.cache(-5,-5,10,10);
+        s.graphics.beginFill('red').drawRect(0, 0, 10, 5);
         s.y = Ice.player.y + 25;
         s.x = Ice.player.x + 50;
         Ice.bullets.addChild(s);
         Ice.stage.update();
         Ice.lastBulletTime = createjs.Ticker.getTime();
+        createjs.Sound.play('attack'+Ice.randomRange(1, 4));
     },
     handleKeyDown: function(e) {
         var keyCode = e.which ? e.which: e.keyCode;
