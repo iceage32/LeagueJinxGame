@@ -39,8 +39,6 @@ var Ice = {
 
         //init and position background
         Ice.bg = new createjs.Bitmap('assets/bg.png');
-        Ice.bg.x = Ice.stage.canvas.width - Ice.bg
-        //Ice.bg.cache(0,0,Ice.stage.canvas.width, 500);
 
         Ice.player.x = 0;
         Ice.player.y= 0;
@@ -177,7 +175,8 @@ var Ice = {
     },
     spawnMonsters: function() {
         var c = new createjs.Container();
-        var b = new createjs.Bitmap('assets/teemo.png');
+        var b = new createjs.Shape();
+        b.graphics.beginFill('blue').drawRect(0,0, 64, 64);
         var hp = new createjs.Text('3/3', 'bold 14px Arial', '#FFFFFF');
         c.x = Ice.stage.canvas.width-64;
         c.y = Ice.randomRange(0, 500-64);
