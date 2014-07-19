@@ -17,6 +17,12 @@ var Ice = {
         monster: 0.05,
         monsterX: 0.03
     },
+    speedIncrements: {
+        player: 0.01,
+        bullet: 0,
+        monster: 0.01,
+        monsterX: 0.01
+    },
     playerInteraction: {
         down: false,
         up: false,
@@ -74,10 +80,10 @@ var Ice = {
     },
     handleTick: function(e) {
         if(Ice.playerInteraction.up) {
-            Ice.player.y -= Ice.speed.player * e.delta;
+            Ice.player.y -= Ice.speed.player * e.delta + (Ice.score * Ice.speedIncrements.player);
         }
         if(Ice.playerInteraction.down) {
-            Ice.player.y += Ice.speed.player * e.delta;
+            Ice.player.y += Ice.speed.player * e.delta  + (Ice.score * Ice.speedIncrements.player);
         }
         if(Ice.playerInteraction.ctrl) {
             if(Ice.lastBulletTime + Ice.bulletTime <= createjs.Ticker.getTime()) {
@@ -101,17 +107,17 @@ var Ice = {
 
         for(var i = 0; i< Ice.monsters.children.length; i++) {
             var m = Ice.monsters.children[i];
-            m.x -= Ice.speed.monster * e.delta;
+            m.x -= Ice.speed.monster * e.delta  + (Ice.score * Ice.speedIncrements.monster);
             if(m.nextMove <= createjs.Ticker.getTime()) {
                 m.direction = Ice.randomRange(-1, 1);
                 m.nextMove = Ice.randomRange(100, 2000) + createjs.Ticker.getTime();
             }
             switch(m.direction) {
                 case 1:
-                    m.y -= Ice.speed.monsterX * e.delta;
+                    m.y -= Ice.speed.monsterX * e.delta  + (Ice.score * Ice.speedIncrements.monsterX);
                     break;
                 case -1:
-                    m.y += Ice.speed.monsterX * e.delta;
+                    m.y += Ice.speed.monsterX * e.delta + (Ice.score * Ice.speedIncrements.monsterX);
                     break;
             }
 
@@ -150,7 +156,7 @@ var Ice = {
         //fire bullets
         for(var i=0; i<Ice.bullets.children.length; i++) {
             var o = Ice.bullets.children[i];
-            o.x += Ice.speed.bullet * e.delta;
+            o.x += Ice.speed.bullet * e.delta  + (Ice.score * Ice.speedIncrements.bullet);
             if(o.x >= Ice.stage.canvas.width) {
                 Ice.bullets.removeChild(o);
             }
@@ -175,8 +181,7 @@ var Ice = {
     },
     spawnMonsters: function() {
         var c = new createjs.Container();
-        var b = new createjs.Shape();
-        b.graphics.beginFill('blue').drawRect(0,0, 64, 64);
+        var b = new createjs.Bitmap('assets/teemo.png');
         var hp = new createjs.Text('3/3', 'bold 14px Arial', '#FFFFFF');
         c.x = Ice.stage.canvas.width-64;
         c.y = Ice.randomRange(0, 500-64);
